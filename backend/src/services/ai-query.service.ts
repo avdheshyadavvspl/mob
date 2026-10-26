@@ -53,7 +53,7 @@ export class AiQueryService {
     // 1. Identify Candidate Employee Name from query
     // Search within user's company first to ensure tenant isolation
     const companyEmployees = await pool.query(
-      `SELECT id, name, email, role, base_monthly_salary FROM users WHERE company_id = $1`,
+      `SELECT id, name, email, role, annual_ctc, base_monthly_salary FROM users WHERE company_id = $1`,
       [user.companyId]
     );
 
@@ -70,7 +70,7 @@ export class AiQueryService {
     }
 
     // If query says "my salary" or "my payroll", use current user
-    if (!matchedEmployee && (trimmed.toLowerCase().includes('my salary') || trimmed.toLowerCase().includes('my net') || trimmed.toLowerCase().includes('my payroll'))) {
+    if (!matchedEmployee && (trimmed.toLowerCase().includes('my salary') || trimmed.toLowerCase().includes('my net') || trimmed.toLowerCase().includes('my payroll') || trimmed.toLowerCase().includes('my ctc'))) {
       matchedEmployee = companyEmployees.rows.find((e: any) => e.id === user.userId);
     }
 
@@ -147,12 +147,14 @@ export class AiQueryService {
     // 5. Generate Natural Plain-English Answer
     const formattedNet = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payrollResult.netSalary);
     const formattedGross = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payrollResult.grossSalary);
+    const formattedCtc = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payrollResult.annualCtc || (payrollResult.grossSalary * 12));
     const formattedLop = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payrollResult.deductions.lossOfPayDeduction);
     const formattedDeduction = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(payrollResult.deductions.simpleDeduction);
 
     const naturalAnswer = `${matchedEmployee.name}'s net salary for ${monthName} ${year} is ${formattedNet}.\n\n` +
       `Here is the detailed breakdown computed from ${payrollResult.company.name}'s attendance records:\n` +
-      `• Gross Monthly Salary: ${formattedGross}\n` +
+      `• Annual CTC: ${formattedCtc} / annum\n` +
+      `• Monthly Gross Salary: ${formattedGross}\n` +
       `• Working Days in ${monthName}: ${payrollResult.workingDays} days\n` +
       `• Attendance Summary: ${payrollResult.attendance.presentDays} Present, ${payrollResult.attendance.absentDays} Absent, ${payrollResult.attendance.halfDays} Half-Day\n` +
       `• Loss of Pay (LOP) Days: ${payrollResult.lossOfPayDays} days\n` +

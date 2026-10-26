@@ -710,10 +710,10 @@ export function App() {
 
                       <div style={{ textAlign: 'right' }}>
                         <div className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-emerald)' }}>
-                          ₹{emp.base_monthly_salary.toLocaleString('en-IN')}
+                          ₹{((emp.annual_ctc) || (emp.base_monthly_salary * 12)).toLocaleString('en-IN')}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                          Base Monthly
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>
+                          CTC/yr • ₹{emp.base_monthly_salary.toLocaleString('en-IN')}/mo
                         </div>
                       </div>
                     </div>
@@ -876,12 +876,21 @@ export function App() {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
-                      Base Monthly Gross
+                      Annual CTC
                     </div>
-                    <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+                    <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
+                      ₹{((activeEmployee.annual_ctc) || (activeEmployee.base_monthly_salary * 12)).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
+                      Monthly Gross
+                    </div>
+                    <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff' }}>
                       ₹{activeEmployee.base_monthly_salary.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -989,13 +998,13 @@ export function App() {
                     }}
                   >
                     <div style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: 600, textTransform: 'uppercase' }}>
-                      Gross Salary
+                      Gross Salary (Monthly)
                     </div>
                     <div className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#818cf8', marginTop: '4px' }}>
                       ₹{payroll.grossSalary.toLocaleString('en-IN')}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '2px' }}>
-                      Rate: ₹{payroll.breakdown.perDaySalary.toLocaleString('en-IN')}/day
+                      CTC: ₹{(payroll.annualCtc || payroll.grossSalary * 12).toLocaleString('en-IN')}/yr • ₹{payroll.breakdown.perDaySalary.toLocaleString('en-IN')}/day
                     </div>
                   </div>
 
@@ -1060,7 +1069,7 @@ export function App() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>Calculation Formula:</span>
                     <span className="mono">
-                      Net (₹{payroll.netSalary.toLocaleString('en-IN')}) = Gross (₹{payroll.grossSalary.toLocaleString('en-IN')}) - LOP (₹{payroll.deductions.lossOfPayDeduction.toLocaleString('en-IN')}) - Statutory 5% (₹{payroll.deductions.simpleDeduction.toLocaleString('en-IN')})
+                      Annual CTC: ₹{(payroll.annualCtc || payroll.grossSalary * 12).toLocaleString('en-IN')} | Net (₹{payroll.netSalary.toLocaleString('en-IN')}) = Gross (₹{payroll.grossSalary.toLocaleString('en-IN')}) - LOP (₹{payroll.deductions.lossOfPayDeduction.toLocaleString('en-IN')}) - 5% Simple (₹{payroll.deductions.simpleDeduction.toLocaleString('en-IN')})
                     </span>
                   </div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>

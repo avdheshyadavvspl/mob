@@ -26,6 +26,7 @@ export interface User {
   email: string;
   role: UserRole;
   designation?: string;
+  annual_ctc: number;
   base_monthly_salary: number;
   created_at: Date;
 }
@@ -50,6 +51,7 @@ export interface AttendanceSummary {
 }
 
 export interface PayrollCalculationInput {
+  annualCtc?: number;
   baseMonthlySalary: number;
   workingDaysInMonth: number;
   presentDays: number;
@@ -60,6 +62,7 @@ export interface PayrollCalculationInput {
 }
 
 export interface PayrollCalculationResult {
+  annualCtc: number;
   workingDays: number;
   presentDays: number;
   absentDays: number;

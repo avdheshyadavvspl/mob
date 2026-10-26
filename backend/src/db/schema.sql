@@ -37,6 +37,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL CHECK (role IN ('ADMIN', 'EMPLOYEE')),
     designation VARCHAR(100),
+    annual_ctc NUMERIC(12, 2) NOT NULL DEFAULT 600000.00,
     base_monthly_salary NUMERIC(12, 2) NOT NULL DEFAULT 50000.00,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -66,6 +67,7 @@ CREATE TABLE payroll_runs (
     half_days NUMERIC(5, 2) NOT NULL,
     lop_days NUMERIC(5, 2) NOT NULL,
     payable_days NUMERIC(5, 2) NOT NULL,
+    annual_ctc NUMERIC(12, 2) NOT NULL DEFAULT 600000.00,
     gross_salary NUMERIC(12, 2) NOT NULL,
     per_day_salary NUMERIC(12, 2) NOT NULL,
     lop_deduction NUMERIC(12, 2) NOT NULL,

@@ -9,7 +9,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'ADMIN',
     company: 'TATA',
-    desc: 'Can calculate/view payroll for anyone at Tata Technologies',
+    desc: 'Admin (CTC: ₹12.0L/yr). Can calculate/view payroll for anyone at Tata Technologies',
   },
   {
     label: '👨‍💻 Tata Technologies — Employee (Ramesh Kumar)',
@@ -17,7 +17,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'EMPLOYEE',
     company: 'TATA',
-    desc: 'Self only. Has 3 LOP days in Oct 2026',
+    desc: 'Employee (CTC: ₹7.2L/yr • ₹60k/mo). Self-only view. 3 LOP days in Oct 2026',
   },
   {
     label: '👩‍🎨 Tata Technologies — Employee (Priya Sharma)',
@@ -25,7 +25,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'EMPLOYEE',
     company: 'TATA',
-    desc: 'Self only. Has 100% perfect attendance',
+    desc: 'Employee (CTC: ₹9.0L/yr • ₹75k/mo). Self-only view. 100% perfect attendance',
   },
   {
     label: '🏭 Reliance Industries — Admin (Vikram Malhotra)',
@@ -33,7 +33,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'ADMIN',
     company: 'RELIANCE',
-    desc: 'Cannot view any Tata data (Strict Tenant Isolation)',
+    desc: 'Admin (CTC: ₹11.4L/yr). Strict Tenant Isolation: Cannot view any Tata data',
   },
   {
     label: '☁️ Reliance Industries — Employee (Rohan Verma)',
@@ -41,7 +41,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'EMPLOYEE',
     company: 'RELIANCE',
-    desc: 'Reliance employee. 20 working days/mo (2 LOP days)',
+    desc: 'Employee (CTC: ₹6.0L/yr • ₹50k/mo). 20 working days/mo (2 LOP days)',
   },
   {
     label: '🛡️ Reliance Industries — Employee (Ananya Iyer)',
@@ -49,7 +49,7 @@ export const PRESET_ACCOUNTS = [
     password: 'password123',
     role: 'EMPLOYEE',
     company: 'RELIANCE',
-    desc: 'Cybersecurity Specialist at Reliance',
+    desc: 'Employee (CTC: ₹7.8L/yr • ₹65k/mo). Cybersecurity Specialist at Reliance',
   },
 ];
 

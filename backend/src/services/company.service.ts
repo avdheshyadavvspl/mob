@@ -21,13 +21,17 @@ export class CompanyService {
 
   async getEmployeesByCompany(companyId: string): Promise<Omit<User, 'password_hash'>[]> {
     const res = await pool.query(
-      `SELECT id, company_id, name, email, role, designation, base_monthly_salary, created_at
+      `SELECT id, company_id, name, email, role, designation, annual_ctc, base_monthly_salary, created_at
        FROM users
        WHERE company_id = $1
        ORDER BY role ASC, name ASC`,
       [companyId]
     );
-    return res.rows.map(r => ({ ...r, base_monthly_salary: Number(r.base_monthly_salary) }));
+    return res.rows.map(r => ({
+      ...r,
+      annual_ctc: Number(r.annual_ctc || Number(r.base_monthly_salary) * 12),
+      base_monthly_salary: Number(r.base_monthly_salary),
+    }));
   }
 
   /**
@@ -35,12 +39,16 @@ export class CompanyService {
    */
   async getEmployeeSelf(companyId: string, employeeId: string): Promise<Omit<User, 'password_hash'>[]> {
     const res = await pool.query(
-      `SELECT id, company_id, name, email, role, designation, base_monthly_salary, created_at
+      `SELECT id, company_id, name, email, role, designation, annual_ctc, base_monthly_salary, created_at
        FROM users
        WHERE company_id = $1 AND id = $2`,
       [companyId, employeeId]
     );
-    return res.rows.map(r => ({ ...r, base_monthly_salary: Number(r.base_monthly_salary) }));
+    return res.rows.map(r => ({
+      ...r,
+      annual_ctc: Number(r.annual_ctc || Number(r.base_monthly_salary) * 12),
+      base_monthly_salary: Number(r.base_monthly_salary),
+    }));
   }
 
   async getWorkingDaysConfig(

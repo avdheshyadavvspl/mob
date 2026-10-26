@@ -39,51 +39,51 @@ export async function seedDatabase() {
   );
 
   // 3. Insert Users for Company A (Tata Technologies)
-  // Admin: Aarav Sharma
+  // Admin: Aarav Sharma (CTC: 12,00,000)
   const adminARes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'ADMIN', 'HR & Payroll Director', 100000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'ADMIN', 'HR & Payroll Director', 1200000.00, 100000.00) RETURNING id, name, email`,
     [companyA.id, 'Aarav Sharma', 'admin@tata.com', passwordHash]
   );
   const adminA = adminARes.rows[0];
 
-  // Employee 1: Ramesh Kumar
+  // Employee 1: Ramesh Kumar (CTC: 7,20,000, Gross: 60,000)
   const rameshRes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Senior Software Engineer', 60000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Senior Software Engineer', 720000.00, 60000.00) RETURNING id, name, email`,
     [companyA.id, 'Ramesh Kumar', 'ramesh@tata.com', passwordHash]
   );
   const ramesh = rameshRes.rows[0];
 
-  // Employee 2: Priya Sharma
+  // Employee 2: Priya Sharma (CTC: 9,00,000, Gross: 75,000)
   const priyaRes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Lead UX Designer', 75000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Lead UX Designer', 900000.00, 75000.00) RETURNING id, name, email`,
     [companyA.id, 'Priya Sharma', 'priya@tata.com', passwordHash]
   );
   const priya = priyaRes.rows[0];
 
   // 4. Insert Users for Company B (Reliance Industries)
-  // Admin: Vikram Malhotra
+  // Admin: Vikram Malhotra (CTC: 11,40,000)
   const adminBRes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'ADMIN', 'Operations Head', 95000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'ADMIN', 'Operations Head', 1140000.00, 95000.00) RETURNING id, name, email`,
     [companyB.id, 'Vikram Malhotra', 'admin@reliance.com', passwordHash]
   );
   const adminB = adminBRes.rows[0];
 
-  // Employee 1: Rohan Verma
+  // Employee 1: Rohan Verma (CTC: 6,00,000, Gross: 50,000)
   const rohanRes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Cloud Architect', 50000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Cloud Architect', 600000.00, 50000.00) RETURNING id, name, email`,
     [companyB.id, 'Rohan Verma', 'rohan@reliance.com', passwordHash]
   );
   const rohan = rohanRes.rows[0];
 
-  // Employee 2: Ananya Iyer
+  // Employee 2: Ananya Iyer (CTC: 7,80,000, Gross: 65,000)
   const ananyaRes = await pool.query(
-    `INSERT INTO users (company_id, name, email, password_hash, role, designation, base_monthly_salary)
-     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Cybersecurity Specialist', 65000.00) RETURNING id, name, email`,
+    `INSERT INTO users (company_id, name, email, password_hash, role, designation, annual_ctc, base_monthly_salary)
+     VALUES ($1, $2, $3, $4, 'EMPLOYEE', 'Cybersecurity Specialist', 780000.00, 65000.00) RETURNING id, name, email`,
     [companyB.id, 'Ananya Iyer', 'ananya@reliance.com', passwordHash]
   );
   const ananya = ananyaRes.rows[0];

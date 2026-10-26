@@ -56,8 +56,10 @@ export function calculatePayrollMath(input: PayrollCalculationInput): PayrollCal
 
   // Net salary = Gross - LOP deduction - Simple deduction (min 0)
   const netSalary = Number(Math.max(0, baseMonthlySalary - totalDeductions).toFixed(2));
+  const annualCtc = input.annualCtc || Number((baseMonthlySalary * 12).toFixed(2));
 
   return {
+    annualCtc,
     workingDays: workingDaysInMonth,
     presentDays,
     absentDays,
@@ -120,7 +122,7 @@ export class PayrollService {
 
     // 1. Verify employee exists and belongs to company (tenant isolation)
     const empRes = await pool.query(
-      `SELECT u.id, u.name, u.email, u.base_monthly_salary, u.designation, u.company_id, c.name as company_name, c.code as company_code
+      `SELECT u.id, u.name, u.email, u.base_monthly_salary, u.annual_ctc, u.designation, u.company_id, c.name as company_name, c.code as company_code
        FROM users u
        JOIN companies c ON c.id = u.company_id
        WHERE u.id = $1 AND u.company_id = $2`,
@@ -135,6 +137,7 @@ export class PayrollService {
 
     const employee = empRes.rows[0];
     const baseMonthlySalary = Number(employee.base_monthly_salary);
+    const annualCtc = Number(employee.annual_ctc || baseMonthlySalary * 12);
 
     // 2. Determine monthly working days
     const workingDays = customWorkingDays !== undefined
@@ -178,6 +181,7 @@ export class PayrollService {
 
     // 4. Perform calculation
     const calc = calculatePayrollMath({
+      annualCtc,
       baseMonthlySalary,
       workingDaysInMonth: workingDays,
       presentDays,
@@ -191,9 +195,9 @@ export class PayrollService {
       `INSERT INTO payroll_runs (
         company_id, employee_id, year, month, working_days,
         present_days, absent_days, half_days, lop_days, payable_days,
-        gross_salary, per_day_salary, lop_deduction, simple_deduction,
+        annual_ctc, gross_salary, per_day_salary, lop_deduction, simple_deduction,
         net_salary, calculated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING id, calculated_at`,
       [
         companyId,
@@ -206,6 +210,7 @@ export class PayrollService {
         calc.halfDays,
         calc.lossOfPayDays,
         calc.payableDays,
+        calc.annualCtc,
         calc.grossSalary,
         calc.perDaySalary,
         calc.lossOfPayDeduction,
@@ -242,6 +247,7 @@ export class PayrollService {
         totalMarkedDays: calc.presentDays + calc.absentDays + calc.halfDays,
       },
       // Explicit requirement outputs:
+      annualCtc: calc.annualCtc,
       lossOfPayDays: calc.lossOfPayDays,
       grossSalary: calc.grossSalary,
       deductions: {
@@ -295,6 +301,7 @@ export class PayrollService {
           halfDays: Number(r.half_days),
           totalMarkedDays: Number(r.present_days) + Number(r.absent_days) + Number(r.half_days),
         },
+        annualCtc: Number(r.annual_ctc || Number(r.gross_salary) * 12),
         lossOfPayDays: Number(r.lop_days),
         grossSalary: Number(r.gross_salary),
         deductions: {

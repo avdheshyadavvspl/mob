@@ -7,7 +7,7 @@ import { JwtPayload, User } from '../types';
 export class AuthService {
   async login(email: string, passwordPlain: string): Promise<{ token: string; user: Omit<User, 'password_hash'>; company: { id: string; name: string; code: string; defaultWorkingDays: number } }> {
     const userRes = await pool.query(
-      `SELECT u.id, u.company_id, u.name, u.email, u.password_hash, u.role, u.designation, u.base_monthly_salary, u.created_at,
+      `SELECT u.id, u.company_id, u.name, u.email, u.password_hash, u.role, u.designation, u.annual_ctc, u.base_monthly_salary, u.created_at,
               c.name as company_name, c.code as company_code, c.default_monthly_working_days
        FROM users u
        JOIN companies c ON c.id = u.company_id
@@ -50,6 +50,7 @@ export class AuthService {
         email: row.email,
         role: row.role,
         designation: row.designation,
+        annual_ctc: Number(row.annual_ctc || Number(row.base_monthly_salary) * 12),
         base_monthly_salary: Number(row.base_monthly_salary),
         created_at: row.created_at,
       },

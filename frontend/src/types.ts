@@ -10,6 +10,7 @@ export interface UserSession {
     email: string;
     role: Role;
     designation: string;
+    annual_ctc?: number;
     base_monthly_salary: number;
   };
   company: {
@@ -27,6 +28,7 @@ export interface Employee {
   email: string;
   role: Role;
   designation?: string;
+  annual_ctc?: number;
   base_monthly_salary: number;
 }
 
@@ -73,6 +75,7 @@ export interface PayrollResult {
     halfDays: number;
     totalMarkedDays: number;
   };
+  annualCtc?: number;
   lossOfPayDays: number;
   grossSalary: number;
   deductions: {
