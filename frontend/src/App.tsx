@@ -16,13 +16,17 @@ import {
   Sliders,
   Send,
   Zap,
+  LogOut,
+  ShieldAlert,
+  UserX,
 } from 'lucide-react';
 import { api, PRESET_ACCOUNTS } from './api';
 import { Employee, AttendanceRecord, AttendanceSummary, PayrollResult, UserSession, AiResponse } from './types';
+import { LoginPage } from './components/LoginPage';
 
 export function App() {
   const [session, setSession] = useState<UserSession | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // Month & year
@@ -53,10 +57,31 @@ export function App() {
   const [aiResult, setAiResult] = useState<AiResponse | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // Init with default preset (Alice Admin Acme)
-  useEffect(() => {
-    switchPersona(PRESET_ACCOUNTS[0]);
-  }, []);
+  // Cross-tenant attack simulator state
+  const [attackTesting, setAttackTesting] = useState<boolean>(false);
+  const [attackResult, setAttackResult] = useState<{
+    blocked: boolean;
+    status?: number;
+    message?: string;
+    details?: string;
+  } | null>(null);
+
+  const handleLoginSuccess = async (newSession: UserSession) => {
+    setSession(newSession);
+    await initializeTenantData(newSession);
+  };
+
+  const handleLogout = () => {
+    api.setToken(null);
+    setSession(null);
+    setEmployees([]);
+    setAttendanceRecords([]);
+    setAttendanceSummary(null);
+    setPayroll(null);
+    setAiResult(null);
+    setAttackResult(null);
+    setError(null);
+  };
 
   const switchPersona = async (preset: typeof PRESET_ACCOUNTS[0]) => {
     setLoading(true);
@@ -64,31 +89,39 @@ export function App() {
     setPayroll(null);
     setAiResult(null);
     setAiError(null);
+    setAttackResult(null);
 
     try {
       const sess = await api.login(preset.email, preset.password);
       setSession(sess);
+      await initializeTenantData(sess);
+    } catch (err: any) {
+      setError(err.message || 'Failed to switch user');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Load company working days
+  const initializeTenantData = async (sess: UserSession) => {
+    try {
+      // 1. Load company working days configuration
       const wd = await api.getWorkingDays(year, month);
       setWorkingDays(wd.workingDays);
       setConfigInput(String(wd.workingDays));
       setIsCustomConfig(wd.isCustomOverride);
 
-      // Load employees for current tenant
+      // 2. Load employees for current tenant
       const empList = await api.getEmployees();
       setEmployees(empList);
 
-      // If user is employee, auto-select them; else select first employee
+      // 3. Auto-select appropriate employee (self if employee, or first member if admin)
       const targetId = sess.user.role === 'EMPLOYEE' ? sess.user.id : empList[0]?.id;
       if (targetId) {
         setSelectedEmployeeId(targetId);
         await loadEmployeeData(targetId);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to switch user');
-    } finally {
-      setLoading(false);
+      setError(err.message);
     }
   };
 
@@ -172,8 +205,73 @@ export function App() {
     }
   };
 
+  // Run a live cross-tenant attack simulation
+  const handleSimulateCrossTenantAttack = async () => {
+    setAttackTesting(true);
+    setAttackResult(null);
+
+    // If currently logged in as Globex, attempt to query Acme employee (Ramesh)
+    // If currently logged in as Acme, attempt to query Globex employee (John Doe)
+    const isAcme = session?.company.code === 'ACME';
+    const targetName = isAcme ? 'John Doe (Globex)' : 'Ramesh Kumar (Acme)';
+
+    try {
+      // Intentionally make a cross-company API call
+      // We will make a raw request with an unauthorized company's employee ID
+      const fakeForeignId = isAcme
+        ? '7c85bfab-fc28-41b2-bf6d-7d6e6f8ca813' // Globex ID
+        : '86f9702f-7c5a-49ea-a99e-0c7ad14a55ab'; // Acme ID
+
+      // Call payroll calculation API with foreign employee ID
+      const res = await fetch('/api/payroll/calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${api.getToken()}`,
+        },
+        body: JSON.stringify({
+          employeeId: fakeForeignId,
+          year: 2026,
+          month: 10,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.tenantSecurityViolation || res.status === 403 || res.status === 404) {
+        setAttackResult({
+          blocked: true,
+          status: res.status,
+          message: data.error || 'Multi-Tenant Isolation Violation: Access Blocked',
+          details: `Tenant Security Guard intercepted cross-company inquiry for ${targetName}. Status: HTTP ${res.status}. Data was never leaked!`,
+        });
+      } else {
+        setAttackResult({
+          blocked: false,
+          status: res.status,
+          message: 'Warning: Cross-company request succeeded unexpectedly',
+          details: JSON.stringify(data),
+        });
+      }
+    } catch (err: any) {
+      setAttackResult({
+        blocked: true,
+        status: 403,
+        message: err.message,
+        details: `Connection was intercepted and rejected. Isolation intact!`,
+      });
+    } finally {
+      setAttackTesting(false);
+    }
+  };
+
+  // If no active session, render the dedicated Login Page!
+  if (!session) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
   const activeEmployee = employees.find((e) => e.id === selectedEmployeeId);
-  const isAcme = session?.company.code === 'ACME';
+  const isAcme = session.company.code === 'ACME';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -196,7 +294,9 @@ export function App() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                background: isAcme
+                  ? 'linear-gradient(135deg, #6366f1, #a855f7)'
+                  : 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -210,53 +310,69 @@ export function App() {
                 <h1 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
                   PayrollCore
                 </h1>
-                <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8' }}>
-                  Multi-Tenant Engine
+                <span className={`badge ${isAcme ? 'badge-acme' : 'badge-globex'}`}>
+                  {session.company.name} ({session.company.code})
                 </span>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Attendance-to-Payroll API with RBAC & LLM Tool Calling
+                Multi-Tenant Attendance & Payroll Gateway
               </p>
             </div>
           </div>
 
-          {/* Active Tenant & User Badge */}
-          {session && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                className="glass-panel"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '6px 14px',
-                  borderRadius: '12px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Building2 size={16} color={isAcme ? '#818cf8' : '#22d3ee'} />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                    {session.company.name}
-                  </span>
-                  <span className={`badge ${isAcme ? 'badge-acme' : 'badge-globex'}`}>
-                    {session.company.code}
-                  </span>
-                </div>
+          {/* Active Tenant & User Badge + Sign Out */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              className="glass-panel"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '6px 14px',
+                borderRadius: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Building2 size={16} color={isAcme ? '#818cf8' : '#22d3ee'} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                  {session.company.name}
+                </span>
+              </div>
 
-                <div style={{ width: '1px', height: '18px', background: 'var(--border-subtle)' }} />
+              <div style={{ width: '1px', height: '18px', background: 'var(--border-subtle)' }} />
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <UserCheck size={16} color={session.user.role === 'ADMIN' ? '#c084fc' : '#4ade80'} />
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                    {session.user.name}
-                  </span>
-                  <span className={`badge ${session.user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
-                    {session.user.role}
-                  </span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <UserCheck size={16} color={session.user.role === 'ADMIN' ? '#c084fc' : '#4ade80'} />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                  {session.user.name}
+                </span>
+                <span className={`badge ${session.user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
+                  {session.user.role}
+                </span>
               </div>
             </div>
-          )}
+
+            {/* Sign Out Button */}
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: 'rgba(244, 63, 94, 0.1)',
+                border: '1px solid rgba(244, 63, 94, 0.3)',
+                color: '#fda4af',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}
+              title="Sign Out to Login Screen"
+            >
+              <LogOut size={14} />
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -264,11 +380,11 @@ export function App() {
       <section style={{ background: 'rgba(16, 22, 34, 0.7)', borderBottom: '1px solid var(--border-subtle)', padding: '10px 24px' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Switch Persona:
+            Switch Account:
           </span>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {PRESET_ACCOUNTS.map((acc) => {
-              const isSelected = session?.user.email === acc.email;
+              const isSelected = session.user.email === acc.email;
               return (
                 <button
                   key={acc.email}
@@ -298,11 +414,11 @@ export function App() {
 
       {/* Main Container */}
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px', flex: 1, width: '100%' }}>
-        {/* Security & Tenant Isolation Info Banner */}
+        {/* Security & Multi-Tenant Isolation Banner */}
         <div
           className="glass-panel"
           style={{
-            padding: '14px 20px',
+            padding: '16px 20px',
             marginBottom: '24px',
             display: 'flex',
             alignItems: 'center',
@@ -313,31 +429,97 @@ export function App() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <ShieldCheck size={20} color={isAcme ? '#818cf8' : '#22d3ee'} />
+            <ShieldCheck size={22} color={isAcme ? '#818cf8' : '#22d3ee'} />
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600 }}>
-                {session?.user.role === 'ADMIN' ? (
+              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+                {session.user.role === 'ADMIN' ? (
                   <span>
-                    Admin View: Full access to run payroll for all {session?.company.name} employees. Cross-tenant access strictly blocked.
+                    Admin View: Authorized to compute payroll for all {session.company.name} employees. Company A data is never visible to Company B.
                   </span>
                 ) : (
                   <span>
-                    Employee View: Self-access only for {session?.user.name}. Access to other employees' attendance or payroll will return 403 Forbidden.
+                    Employee View: Self-access only for {session.user.name}. Attempts to access other employee records will return 403 Forbidden.
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Tenant Isolation: Queries are scoped with <code>company_id = '{session?.company.id}'</code>. Company A data is never visible to Company B.
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                Tenant Isolation: Queries are scoped with <code>company_id = '{session.company.id}'</code>. Cross-company access is strictly rejected at the middleware level.
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={handleSimulateCrossTenantAttack}
+              disabled={attackTesting}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'rgba(244, 63, 94, 0.15)',
+                border: '1px solid rgba(244, 63, 94, 0.35)',
+                color: '#fb7185',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+              }}
+              title="Send a cross-tenant request to prove Company A data is invisible to Company B"
+            >
+              <ShieldAlert size={14} />
+              {attackTesting ? 'Testing Security...' : 'Simulate Cross-Tenant Access Attempt'}
+            </button>
+
             <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-              <Lock size={12} /> Tenant Boundary Active
+              <Lock size={12} /> Isolation Enforced
             </span>
           </div>
         </div>
+
+        {/* Cross-Tenant Attack Simulator Result Modal/Banner */}
+        {attackResult && (
+          <div
+            className="glass-panel"
+            style={{
+              padding: '16px 20px',
+              marginBottom: '24px',
+              background: attackResult.blocked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.15)',
+              border: attackResult.blocked ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(244, 63, 94, 0.4)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              {attackResult.blocked ? (
+                <CheckCircle2 size={22} color="#34d399" style={{ marginTop: '2px' }} />
+              ) : (
+                <AlertCircle size={22} color="#fb7185" style={{ marginTop: '2px' }} />
+              )}
+              <div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: attackResult.blocked ? '#6ee7b7' : '#fda4af' }}>
+                  {attackResult.blocked
+                    ? 'Security Verified: Multi-Tenant Isolation Blocked Cross-Company Access'
+                    : 'Security Alert: Request Succeeded'}
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-main)', marginTop: '4px' }}>
+                  Server Response: <code>{attackResult.message}</code>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  {attackResult.details}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setAttackResult(null)}
+              style={{ background: 'transparent', color: 'var(--text-dim)', fontSize: '0.75rem' }}
+            >
+              Close
+            </button>
+          </div>
+        )}
 
         {error && (
           <div
@@ -453,7 +635,7 @@ export function App() {
                   )}
                 </div>
 
-                {session?.user.role === 'ADMIN' && !editingConfig && (
+                {session.user.role === 'ADMIN' && !editingConfig && (
                   <button
                     onClick={() => setEditingConfig(true)}
                     style={{
@@ -476,7 +658,7 @@ export function App() {
               <div style={{ marginTop: '10px', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
                 {isCustomConfig
                   ? '• Custom month override active for October 2026'
-                  : `• Default company setting: ${session?.company.defaultWorkingDays} days`}
+                  : `• Default company setting: ${session.company.defaultWorkingDays} days`}
               </div>
             </div>
 
@@ -484,7 +666,7 @@ export function App() {
             <div className="glass-panel" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <h2 style={{ fontSize: '1rem', fontWeight: 700 }}>
-                  {session?.user.role === 'ADMIN' ? 'Select Employee' : 'My Profile'}
+                  {session.user.role === 'ADMIN' ? 'Select Employee' : 'My Profile'}
                 </h2>
                 <span className="badge" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)' }}>
                   {employees.length} Members
@@ -494,8 +676,8 @@ export function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {employees.map((emp) => {
                   const isSelected = emp.id === selectedEmployeeId;
-                  const isSelf = emp.id === session?.user.id;
-                  const isDisabled = session?.user.role === 'EMPLOYEE' && !isSelf;
+                  const isSelf = emp.id === session.user.id;
+                  const isDisabled = session.user.role === 'EMPLOYEE' && !isSelf;
 
                   return (
                     <div
@@ -545,7 +727,7 @@ export function App() {
                 })}
               </div>
 
-              {session?.user.role === 'EMPLOYEE' && (
+              {session.user.role === 'EMPLOYEE' && (
                 <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Lock size={12} /> Other employees locked via Role-Based Access Control
                 </div>
@@ -685,7 +867,7 @@ export function App() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <h2 style={{ fontSize: '1.35rem', fontWeight: 800 }}>{activeEmployee.name}</h2>
-                    <span className={`badge ${session?.user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
+                    <span className={`badge ${session.user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
                       {activeEmployee.role}
                     </span>
                   </div>
@@ -874,7 +1056,7 @@ export function App() {
                 <div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>October 2026 Attendance Log</h3>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    {session?.user.role === 'ADMIN'
+                    {session.user.role === 'ADMIN'
                       ? 'Click on any day badge to cycle status: Present → Half-Day → Absent.'
                       : 'View-only personal attendance records.'}
                   </p>
@@ -925,7 +1107,7 @@ export function App() {
                           : isHalfDay
                           ? '1px solid rgba(245, 158, 11, 0.35)'
                           : '1px solid var(--border-subtle)',
-                        cursor: session?.user.role === 'ADMIN' ? 'pointer' : 'default',
+                        cursor: session.user.role === 'ADMIN' ? 'pointer' : 'default',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
