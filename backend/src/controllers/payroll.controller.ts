@@ -61,6 +61,21 @@ export class PayrollController {
     }
   }
 
+  async viewPayroll(req: Request, res: Response) {
+    try {
+      const companyId = req.companyId!;
+      const employeeId = req.params.employeeId;
+      const year = parseInt(req.query.year as string, 10) || 2026;
+      const month = parseInt(req.query.month as string, 10) || 10;
+
+      const result = await payrollService.getPayrollView(companyId, employeeId, year, month);
+      return res.json({ success: true, data: result });
+    } catch (err: any) {
+      const status = err.statusCode || 500;
+      return res.status(status).json({ success: false, error: err.message });
+    }
+  }
+
   async getHistory(req: Request, res: Response) {
     try {
       const companyId = req.companyId!;

@@ -125,6 +125,10 @@ class ApiClient {
     });
   }
 
+  async getPayrollView(employeeId: string, year = 2026, month = 10): Promise<PayrollResult> {
+    return this.request<PayrollResult>(`/payroll/view/${employeeId}?year=${year}&month=${month}`);
+  }
+
   async calculatePayroll(payload: {
     employeeId: string;
     year?: number;

@@ -62,9 +62,9 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
   });
 
   /**
-   * Requirement 3: Employee can only see their own data
+   * Requirement 3: Admin can run it for anyone; Employee can only see their own data
    */
-  test('Requirement 3 (B): Employee (Ramesh) CAN calculate/view his own payroll data', async () => {
+  test('Requirement 3 (B): Employee (Ramesh) CANNOT run payroll calculation - only Admin can run it (403 Forbidden)', async () => {
     const res = await request(app)
       .post('/api/payroll/calculate')
       .set('Authorization', `Bearer ${rameshToken}`)
@@ -74,20 +74,25 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
         month: 10,
       });
 
+    expect(res.status).toBe(403);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('Admin access required');
+  });
+
+  test('Requirement 3 (C): Employee (Ramesh) CAN view/see his own payroll data', async () => {
+    const res = await request(app)
+      .get(`/api/payroll/view/${rameshId}?year=2026&month=10`)
+      .set('Authorization', `Bearer ${rameshToken}`);
+
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.netSalary).toBe(48818.18);
   });
 
-  test('Requirement 3 (C): Employee (Ramesh) CANNOT access another employee (Priya) in the same company', async () => {
+  test('Requirement 3 (D): Employee (Ramesh) CANNOT view another employee (Priya) in the same company', async () => {
     const res = await request(app)
-      .post('/api/payroll/calculate')
-      .set('Authorization', `Bearer ${rameshToken}`)
-      .send({
-        employeeId: priyaId,
-        year: 2026,
-        month: 10,
-      });
+      .get(`/api/payroll/view/${priyaId}?year=2026&month=10`)
+      .set('Authorization', `Bearer ${rameshToken}`);
 
     expect(res.status).toBe(403);
     expect(res.body.success).toBe(false);

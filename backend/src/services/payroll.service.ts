@@ -259,6 +259,68 @@ export class PayrollService {
   }
 
   /**
+   * View payroll for an employee (Read-only view for Employee or Admin)
+   */
+  async getPayrollView(companyId: string, employeeId: string, year: number, month: number) {
+    // Check if an audit run exists
+    const runRes = await pool.query(
+      `SELECT pr.*, u.name as employee_name, u.email as employee_email, u.designation,
+              c.name as company_name, c.code as company_code
+       FROM payroll_runs pr
+       JOIN users u ON u.id = pr.employee_id
+       JOIN companies c ON c.id = pr.company_id
+       WHERE pr.company_id = $1 AND pr.employee_id = $2 AND pr.year = $3 AND pr.month = $4
+       ORDER BY pr.calculated_at DESC
+       LIMIT 1`,
+      [companyId, employeeId, year, month]
+    );
+
+    if (runRes.rows.length > 0) {
+      const r = runRes.rows[0];
+      return {
+        runId: r.id,
+        calculatedAt: r.calculated_at,
+        isApprovedRun: true,
+        company: { id: r.company_id, name: r.company_name, code: r.company_code },
+        employee: { id: r.employee_id, name: r.employee_name, email: r.employee_email, designation: r.designation },
+        period: {
+          year: r.year,
+          month: r.month,
+          monthName: new Date(r.year, r.month - 1).toLocaleString('en-US', { month: 'long' }),
+        },
+        workingDays: Number(r.working_days),
+        attendance: {
+          presentDays: Number(r.present_days),
+          absentDays: Number(r.absent_days),
+          halfDays: Number(r.half_days),
+          totalMarkedDays: Number(r.present_days) + Number(r.absent_days) + Number(r.half_days),
+        },
+        lossOfPayDays: Number(r.lop_days),
+        grossSalary: Number(r.gross_salary),
+        deductions: {
+          lossOfPayDeduction: Number(r.lop_deduction),
+          simpleDeduction: Number(r.simple_deduction),
+          totalDeductions: Number((Number(r.lop_deduction) + Number(r.simple_deduction)).toFixed(2)),
+        },
+        netSalary: Number(r.net_salary),
+        breakdown: {
+          perDaySalary: Number(r.per_day_salary),
+          payableDays: Number(r.payable_days),
+          simpleDeductionRule: '5% statutory/standard deduction on gross salary',
+        },
+      };
+    }
+
+    // If not yet saved in payroll_runs, calculate view on the fly (read-only, does not insert audit run)
+    return this.calculatePayrollFromAttendance({
+      companyId,
+      employeeId,
+      year,
+      month,
+    });
+  }
+
+  /**
    * Get past payroll calculations for an employee (filtered by tenant)
    */
   async getPayrollHistory(companyId: string, employeeId: string, limit = 12) {

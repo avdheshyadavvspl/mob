@@ -56,15 +56,22 @@ router.post(
   attendanceController.markBatch.bind(attendanceController)
 );
 
-// Payroll Calculation (Requirements 2, 3, 4)
-// An endpoint that takes a month's attendance (present / absent / half-day) for an employee
-// and returns loss-of-pay days, gross salary, a simple deduction, and net salary.
+// Payroll Calculation & Viewing (Requirements 2, 3, 4)
+// Requirement 3: An Admin can run it for anyone; an Employee can only see their own data.
 router.post(
   '/payroll/calculate',
   authenticate,
   enforceTenantIsolation,
-  canAccessEmployeeData((req) => req.body.employeeId),
+  requireAdmin, // <-- Only Admin can RUN payroll!
   payrollController.calculate.bind(payrollController)
+);
+
+router.get(
+  '/payroll/view/:employeeId',
+  authenticate,
+  enforceTenantIsolation,
+  canAccessEmployeeData((req) => req.params.employeeId), // <-- Employee can SEE/VIEW their own data!
+  payrollController.viewPayroll.bind(payrollController)
 );
 
 router.get(

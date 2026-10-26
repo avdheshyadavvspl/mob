@@ -131,13 +131,11 @@ export function App() {
       setAttendanceRecords(att.records);
       setAttendanceSummary(att.summary);
 
-      // Auto-calculate payroll for seamless UX
+      // Admin can RUN/calculate payroll; Employee can ONLY VIEW their approved payroll data
       setCalcLoading(true);
-      const pr = await api.calculatePayroll({
-        employeeId: empId,
-        year,
-        month,
-      });
+      const pr = session?.user.role === 'ADMIN'
+        ? await api.calculatePayroll({ employeeId: empId, year, month })
+        : await api.getPayrollView(empId, year, month);
       setPayroll(pr);
     } catch (err: any) {
       setError(err.message);
@@ -888,25 +886,45 @@ export function App() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => loadEmployeeData(activeEmployee.id)}
-                    disabled={calcLoading}
-                    style={{
-                      background: 'var(--accent-primary)',
-                      color: '#fff',
-                      padding: '10px 18px',
-                      borderRadius: '10px',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: 'var(--shadow-glow)',
-                    }}
-                  >
-                    {calcLoading ? <RefreshCw size={16} className="spin" /> : <Zap size={16} />}
-                    Recalculate Payroll
-                  </button>
+                  {session.user.role === 'ADMIN' ? (
+                    <button
+                      onClick={() => loadEmployeeData(activeEmployee.id)}
+                      disabled={calcLoading}
+                      style={{
+                        background: 'var(--accent-primary)',
+                        color: '#fff',
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: 'var(--shadow-glow)',
+                      }}
+                    >
+                      {calcLoading ? <RefreshCw size={16} className="spin" /> : <Zap size={16} />}
+                      Run Payroll Calculation
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#6ee7b7',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Lock size={14} />
+                      View-Only Pay Slip
+                    </div>
+                  )}
                 </div>
               </div>
             )}
