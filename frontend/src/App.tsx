@@ -210,19 +210,14 @@ export function App() {
     setAttackTesting(true);
     setAttackResult(null);
 
-    // If currently logged in as Globex, attempt to query Acme employee (Ramesh)
-    // If currently logged in as Acme, attempt to query Globex employee (John Doe)
-    const isAcme = session?.company.code === 'ACME';
-    const targetName = isAcme ? 'John Doe (Globex)' : 'Ramesh Kumar (Acme)';
+    const isTata = session?.company.code === 'TATA';
+    const targetName = isTata ? 'Rohan Verma (Reliance)' : 'Ramesh Kumar (Tata)';
 
     try {
-      // Intentionally make a cross-company API call
-      // We will make a raw request with an unauthorized company's employee ID
-      const fakeForeignId = isAcme
-        ? '7c85bfab-fc28-41b2-bf6d-7d6e6f8ca813' // Globex ID
-        : '86f9702f-7c5a-49ea-a99e-0c7ad14a55ab'; // Acme ID
+      const fakeForeignId = isTata
+        ? '49502082-c544-4b4d-8ea8-25d833ad48ef' // Reliance ID
+        : '37aa4101-ebd5-4682-9c41-ea62fb6607f1'; // Tata ID
 
-      // Call payroll calculation API with foreign employee ID
       const res = await fetch('/api/payroll/calculate', {
         method: 'POST',
         headers: {
@@ -271,7 +266,7 @@ export function App() {
   }
 
   const activeEmployee = employees.find((e) => e.id === selectedEmployeeId);
-  const isAcme = session.company.code === 'ACME';
+  const isTata = session.company.code === 'TATA';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -294,7 +289,7 @@ export function App() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: isAcme
+                background: isTata
                   ? 'linear-gradient(135deg, #6366f1, #a855f7)'
                   : 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                 display: 'flex',
@@ -310,7 +305,7 @@ export function App() {
                 <h1 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
                   PayrollCore
                 </h1>
-                <span className={`badge ${isAcme ? 'badge-acme' : 'badge-globex'}`}>
+                <span className={`badge ${isTata ? 'badge-acme' : 'badge-globex'}`}>
                   {session.company.name} ({session.company.code})
                 </span>
               </div>
@@ -333,7 +328,7 @@ export function App() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Building2 size={16} color={isAcme ? '#818cf8' : '#22d3ee'} />
+                <Building2 size={16} color={isTata ? '#818cf8' : '#22d3ee'} />
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                   {session.company.name}
                 </span>
@@ -425,11 +420,11 @@ export function App() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
-            borderLeft: `4px solid ${isAcme ? 'var(--accent-primary)' : 'var(--accent-cyan)'}`,
+            borderLeft: `4px solid ${isTata ? 'var(--accent-primary)' : 'var(--accent-cyan)'}`,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <ShieldCheck size={22} color={isAcme ? '#818cf8' : '#22d3ee'} />
+            <ShieldCheck size={22} color={isTata ? '#818cf8' : '#22d3ee'} />
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>
                 {session.user.role === 'ADMIN' ? (
@@ -1160,7 +1155,7 @@ export function App() {
                     <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>1. Two Companies with Working Days</span>
                   </div>
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Acme Corp (22 days) & Globex Inc (20 days) configured in PostgreSQL.
+                    Tata Technologies (22 days) & Reliance Industries (20 days) configured in PostgreSQL.
                   </p>
                 </div>
 

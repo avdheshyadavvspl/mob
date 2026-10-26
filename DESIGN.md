@@ -1,10 +1,10 @@
 # Multi-Tenant Attendance-to-Payroll System — Design & Architecture Note
 
 ## 1. Executive Summary
-This project implements a multi-tenant Attendance-to-Payroll API and interactive web application built with **Node.js/Express, TypeScript, PostgreSQL, and React**. The system manages multiple distinct companies (e.g., Acme Technologies and Globex Industries), each configured with distinct monthly working days, employees, attendance tracking, and automated payroll calculations.
+This project implements a multi-tenant Attendance-to-Payroll API and interactive web application built with **Node.js/Express, TypeScript, PostgreSQL, and React**. The system manages multiple distinct companies (**Tata Technologies** and **Reliance Industries**), each configured with distinct monthly working days, employees, attendance tracking, and automated payroll calculations.
 
 Key capabilities include:
-- **Tenant Isolation**: Complete logical data separation ensuring Company A's data can never be viewed, enumerated, or modified by Company B.
+- **Tenant Isolation**: Complete logical data separation ensuring Company A's (Tata Technologies) data can never be viewed, enumerated, or modified by Company B (Reliance Industries).
 - **Role-Based Access Control (RBAC)**: Admins can calculate and audit payroll for any employee within their organization; Employees are restricted strictly to their own data.
 - **Attendance-to-Payroll Calculation Engine**: Pure, deterministic computation of Loss of Pay (LOP) days, gross salary, standard deductions, and payable net salary.
 - **Comprehensive Test Suite**: Automated unit and integration tests covering calculation scenarios, RBAC boundaries, and multi-tenant security.
@@ -45,7 +45,7 @@ graph TD
 companies (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    code VARCHAR(50) UNIQUE NOT NULL, -- 'ACME', 'GLOBEX'
+    code VARCHAR(50) UNIQUE NOT NULL, -- 'TATA', 'RELIANCE'
     default_monthly_working_days INT NOT NULL DEFAULT 22
 );
 
@@ -120,7 +120,7 @@ payroll_runs (
 ## 5. Attendance-to-Payroll Mathematical Model
 
 ### Formal Definitions
-1. **Working Days ($W$)**: Configured working days for the company in that month (e.g. 22 days for Acme, 20 days for Globex).
+1. **Working Days ($W$)**: Configured working days for the company in that month (e.g. 22 days for Tata Technologies, 20 days for Reliance Industries).
 2. **Gross Monthly Salary ($G$)**: Agreed base monthly compensation.
 3. **Daily Salary Rate ($R$)**:
    $$R = \frac{G}{W}$$
@@ -158,8 +158,8 @@ payroll_runs (
 - **Test Case 3: 100% Absences (Zero Net Floor Protection)**
   - Inputs: Gross = ₹50,000, Working Days = 20, Attendance = 0 Present, 20 Absent.
   - Results: LOP Days = 20, LOP Deduction = ₹50,000, Net Salary = ₹0.00.
-- **Test Case 4: Company Working-Days Differences (Globex 20 Days)**
-  - Inputs: Gross = ₹50,000, Working Days = 20, Attendance = 17 Present, 1 Absent, 2 Half-Days.
+- **Test Case 4: Company Working-Days Differences (Reliance 20 Days)**
+  - Inputs: Gross = ₹50,000, Working Days = 20, Attendance = 17 Present, 1 Absent, 2 Half-Days (Rohan Verma).
   - LOP Days: $1 + 1 = 2.0$ days.
   - Daily Rate: $50,000 / 20 = ₹2,500.00$.
   - LOP Deduction: $2 \times 2,500 = ₹5,000.00$.
@@ -167,13 +167,13 @@ payroll_runs (
   - Net Salary: ₹42,500.00.
 
 ### Tenant Isolation & RBAC Test Cases (`src/tests/tenant-isolation.spec.ts`)
-- **Requirement 3 (A)**: Admin of Acme can calculate payroll for Ramesh.
+- **Requirement 3 (A)**: Admin of Tata can calculate payroll for Ramesh.
 - **Requirement 3 (B)**: Ramesh can view his own payroll.
 - **Requirement 3 (C)**: Ramesh cannot access Priya's payroll (returns 403 Forbidden).
-- **Requirement 4 (A)**: Admin of Globex cannot access Ramesh (returns 403 Tenant Isolation Violation).
+- **Requirement 4 (A)**: Admin of Reliance cannot access Ramesh (returns 403 Tenant Isolation Violation).
 - **Requirement 4 (B)**: Attendance endpoint blocks cross-tenant employee access.
 - **Bonus Query Test**: Plain-English query answers Ramesh's net salary with exact numbers.
-- **Bonus Query Isolation Test**: Globex user querying Ramesh returns tenant isolation error.
+- **Bonus Query Isolation Test**: Reliance user querying Ramesh returns tenant isolation error.
 
 ---
 
@@ -212,9 +212,9 @@ Payload: `{ "question": "What is Ramesh's net salary for October?" }`
 cd backend
 npm install
 npm run db:migrate   # creates tables and indexes
-npm run db:seed      # seeds Acme & Globex companies, users, attendance
+npm run db:seed      # seeds Tata & Reliance companies, users, attendance
 npm test             # runs all 11 unit & integration tests
-npm run dev          # starts backend at http://localhost:5000
+npm run dev          # starts backend at http://localhost:5050
 ```
 
 ### Frontend

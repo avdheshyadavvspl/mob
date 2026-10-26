@@ -10,30 +10,30 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
   let adminBToken: string;
   let rameshId: string;
   let priyaId: string;
-  let johnId: string;
+  let rohanId: string;
 
   beforeAll(async () => {
-    // Login as Alice Admin (Company A)
-    const loginA = await authService.login('admin@acme.com', 'password123');
+    // Login as Aarav Admin (Company A: Tata Technologies)
+    const loginA = await authService.login('admin@tata.com', 'password123');
     adminAToken = loginA.token;
 
-    // Login as Ramesh (Employee in Company A)
-    const loginRamesh = await authService.login('ramesh@acme.com', 'password123');
+    // Login as Ramesh Kumar (Employee in Company A)
+    const loginRamesh = await authService.login('ramesh@tata.com', 'password123');
     rameshToken = loginRamesh.token;
     rameshId = loginRamesh.user.id;
 
-    // Login as Priya (Employee in Company A)
-    const loginPriya = await authService.login('priya@acme.com', 'password123');
+    // Login as Priya Sharma (Employee in Company A)
+    const loginPriya = await authService.login('priya@tata.com', 'password123');
     priyaToken = loginPriya.token;
     priyaId = loginPriya.user.id;
 
-    // Login as Bob Admin (Company B)
-    const loginB = await authService.login('admin@globex.com', 'password123');
+    // Login as Vikram Admin (Company B: Reliance Industries)
+    const loginB = await authService.login('admin@reliance.com', 'password123');
     adminBToken = loginB.token;
 
-    // Fetch John Doe ID (Company B)
-    const johnRes = await pool.query(`SELECT id FROM users WHERE email = 'john@globex.com'`);
-    johnId = johnRes.rows[0].id;
+    // Fetch Rohan Verma ID (Reliance Industries)
+    const rohanRes = await pool.query(`SELECT id FROM users WHERE email = 'rohan@reliance.com'`);
+    rohanId = rohanRes.rows[0].id;
   });
 
   afterAll(async () => {
@@ -43,7 +43,7 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
   /**
    * Requirement 3: Admin can run it for anyone in their company
    */
-  test('Requirement 3 (A): Admin of Company A CAN calculate payroll for any employee in Company A (Ramesh)', async () => {
+  test('Requirement 3 (A): Admin of Tata Technologies CAN calculate payroll for any employee in Tata (Ramesh)', async () => {
     const res = await request(app)
       .post('/api/payroll/calculate')
       .set('Authorization', `Bearer ${adminAToken}`)
@@ -97,7 +97,7 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
   /**
    * Requirement 4: Company A's data must never be visible to Company B
    */
-  test('Requirement 4 (A): Admin of Company B CANNOT access Company A employee (Ramesh) - returns 403 Tenant Isolation', async () => {
+  test('Requirement 4 (A): Admin of Reliance (Company B) CANNOT access Tata employee (Ramesh) - returns 403 Tenant Isolation', async () => {
     const res = await request(app)
       .post('/api/payroll/calculate')
       .set('Authorization', `Bearer ${adminBToken}`)
@@ -112,7 +112,7 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
     expect(res.body.error).toContain('Multi-Tenant Isolation Violation');
   });
 
-  test('Requirement 4 (B): Company B employee attendance endpoint blocks Company A employee ID', async () => {
+  test('Requirement 4 (B): Reliance endpoint blocks Tata employee ID on attendance', async () => {
     const res = await request(app)
       .get(`/api/attendance/${rameshId}?year=2026&month=10`)
       .set('Authorization', `Bearer ${adminBToken}`);
@@ -143,7 +143,7 @@ describe('Multi-Tenant Isolation & Role-Based Access Control (Requirements 3 & 4
   });
 
   test('Optional Bonus: Cross-Tenant plain-English query prevents data leakage', async () => {
-    // Bob Admin (Company B) tries to ask about Ramesh (Company A)
+    // Vikram Admin (Reliance Industries - Company B) tries to ask about Ramesh (Tata - Company A)
     const res = await request(app)
       .post('/api/ai/ask')
       .set('Authorization', `Bearer ${adminBToken}`)

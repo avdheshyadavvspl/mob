@@ -59,8 +59,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  const companyAAccounts = PRESET_ACCOUNTS.filter((a) => a.company === 'ACME');
-  const companyBAccounts = PRESET_ACCOUNTS.filter((a) => a.company === 'GLOBEX');
+  const companyAAccounts = PRESET_ACCOUNTS.filter((a) => a.company === 'TATA');
+  const companyBAccounts = PRESET_ACCOUNTS.filter((a) => a.company === 'RELIANCE');
 
   return (
     <div
@@ -152,15 +152,15 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 Strict Multi-Tenant Isolation Guarantee
               </div>
               <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                <strong>Company A's data must never be visible to Company B.</strong> Each tenant’s queries are cryptographically bound to their <code>company_id</code>.
+                <strong>Tata Technologies (Company A) data is NEVER visible to Reliance Industries (Company B).</strong> Each tenant’s queries are cryptographically bound to their <code>company_id</code>.
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <span className="badge badge-acme">Acme (Company A)</span>
+            <span className="badge badge-acme">Tata Technologies</span>
             <span style={{ color: 'var(--text-dim)', alignSelf: 'center' }}>≠</span>
-            <span className="badge badge-globex">Globex (Company B)</span>
+            <span className="badge badge-globex">Reliance Industries</span>
           </div>
         </div>
 
@@ -175,7 +175,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Account Login</h2>
               </div>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                Sign in with your organization email to access your attendance records and payroll.
+                Sign in with your corporate email to access your attendance records and payroll.
               </p>
 
               {error && (
@@ -219,7 +219,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. admin@acme.com"
+                      placeholder="e.g. admin@tata.com"
                       style={{
                         background: 'transparent',
                         border: 'none',
@@ -294,12 +294,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {/* Quick One-Click Tenant Personas (7 cols) */}
           <div style={{ gridColumn: 'span 7', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* Company A: Acme Technologies */}
+            {/* Company A: Tata Technologies */}
             <div className="glass-panel" style={{ padding: '22px', borderLeft: '4px solid var(--accent-primary)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Building2 size={18} color="#818cf8" />
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Company A: Acme Technologies</h3>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Company A: Tata Technologies</h3>
                 </div>
                 <span className="badge badge-acme">22 Working Days/mo</span>
               </div>
@@ -344,12 +344,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
             </div>
 
-            {/* Company B: Globex Industries */}
+            {/* Company B: Reliance Industries */}
             <div className="glass-panel" style={{ padding: '22px', borderLeft: '4px solid var(--accent-cyan)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Building2 size={18} color="#22d3ee" />
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Company B: Globex Industries</h3>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Company B: Reliance Industries</h3>
                 </div>
                 <span className="badge badge-globex">20 Working Days/mo</span>
               </div>
