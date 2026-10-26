@@ -30,6 +30,19 @@ export class CompanyService {
     return res.rows.map(r => ({ ...r, base_monthly_salary: Number(r.base_monthly_salary) }));
   }
 
+  /**
+   * For employee self-view: strictly return ONLY the employee's own record
+   */
+  async getEmployeeSelf(companyId: string, employeeId: string): Promise<Omit<User, 'password_hash'>[]> {
+    const res = await pool.query(
+      `SELECT id, company_id, name, email, role, designation, base_monthly_salary, created_at
+       FROM users
+       WHERE company_id = $1 AND id = $2`,
+      [companyId, employeeId]
+    );
+    return res.rows.map(r => ({ ...r, base_monthly_salary: Number(r.base_monthly_salary) }));
+  }
+
   async getWorkingDaysConfig(
     companyId: string,
     year: number,

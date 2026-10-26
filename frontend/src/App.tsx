@@ -664,20 +664,22 @@ export function App() {
                   {session.user.role === 'ADMIN' ? 'Select Employee' : 'My Profile'}
                 </h2>
                 <span className="badge" style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)' }}>
-                  {employees.length} Members
+                  {session.user.role === 'ADMIN' ? `${employees.length} Members` : 'Active Employee'}
                 </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {employees.map((emp) => {
+                {(session.user.role === 'EMPLOYEE'
+                  ? employees.filter((e) => e.id === session.user.id)
+                  : employees
+                ).map((emp) => {
                   const isSelected = emp.id === selectedEmployeeId;
                   const isSelf = emp.id === session.user.id;
-                  const isDisabled = session.user.role === 'EMPLOYEE' && !isSelf;
 
                   return (
                     <div
                       key={emp.id}
-                      onClick={() => !isDisabled && handleSelectEmployee(emp.id)}
+                      onClick={() => handleSelectEmployee(emp.id)}
                       style={{
                         padding: '12px 14px',
                         borderRadius: '10px',
@@ -687,8 +689,7 @@ export function App() {
                         border: isSelected
                           ? '1px solid var(--border-highlight)'
                           : '1px solid var(--border-subtle)',
-                        cursor: isDisabled ? 'not-allowed' : 'pointer',
-                        opacity: isDisabled ? 0.4 : 1,
+                        cursor: session.user.role === 'ADMIN' ? 'pointer' : 'default',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -724,7 +725,7 @@ export function App() {
 
               {session.user.role === 'EMPLOYEE' && (
                 <div style={{ marginTop: '12px', fontSize: '0.75rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Lock size={12} /> Other employees locked via Role-Based Access Control
+                  <Lock size={12} /> Privacy Protected: You can only view your own employee data.
                 </div>
               )}
             </div>
@@ -747,11 +748,17 @@ export function App() {
 
               {/* Quick suggestion chips */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                {[
-                  "What is Ramesh's net salary for October?",
-                  "What are Priya's loss of pay days?",
-                  "What is Ramesh's net salary? (Cross-Tenant Test)",
-                ].map((chip) => (
+                {(session.user.role === 'EMPLOYEE'
+                  ? [
+                      `What is my net salary for October?`,
+                      `What are my loss of pay days?`,
+                    ]
+                  : [
+                      "What is Ramesh's net salary for October?",
+                      "What are Priya's loss of pay days?",
+                      "What is Ramesh's net salary? (Cross-Tenant Test)",
+                    ]
+                ).map((chip) => (
                   <button
                     key={chip}
                     onClick={() => {

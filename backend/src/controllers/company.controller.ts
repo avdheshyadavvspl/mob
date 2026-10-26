@@ -34,7 +34,14 @@ export class CompanyController {
   async getEmployees(req: Request, res: Response) {
     try {
       const companyId = req.companyId!;
-      const employees = await companyService.getEmployeesByCompany(companyId);
+      const user = req.user;
+
+      // Privacy / RBAC Enforcement:
+      // If user is EMPLOYEE, strictly return ONLY their own profile! (Other employees are never exposed)
+      const employees = (user && user.role === 'EMPLOYEE')
+        ? await companyService.getEmployeeSelf(companyId, user.userId)
+        : await companyService.getEmployeesByCompany(companyId);
+
       return res.json({ success: true, data: employees });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err.message });
